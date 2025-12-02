@@ -83,7 +83,53 @@
     "contact.subjectBase":{ it:"Richiesta informazioni – Blu Mediterraneo", en:"Info request – Blu Mediterraneo", es:"Solicitud de información – Blu Mediterraneo" },
   "contact.testoMail":{ it:"Cliccando su <strong>Invia richiesta</strong> il tuo messaggio verrà inviato via email a <i>blumediterraneo.seansleep@gmail.com</i>", en: "By clicking <strong>Send request</strong>, your message will be sent by email to <i>blumediterraneo.seansleep@gmail.com</i>", es:"Al hacer clic en <strong>Enviar solicitud</strong>, tu mensaje se enviará por correo electrónico a <i>blumediterraneo.seansleep@gmail.com.</i>"},
   "contact.testoWz":{ it:'Se preferisci, puoi contattarci anche su', en: "If you prefer, you can also contact us on", es:"Si lo prefieres, también puedes contactarnos por"},
-   "aria.openLang": { it:"Apri selettore lingua", en:"Open language selector", es:"Abrir selector de idioma" },
+  "banner.title": {
+    it: "Countdown a {holiday}",
+    en: "Countdown to {holiday}",
+    es: "Cuenta atrás para {holiday}"
+  },
+  "banner.countdownLabel": {
+    it: "Manca:",
+    en: "Time left:",
+    es: "Falta:"
+  },
+  "banner.arrived": {
+    it: "È arrivato {holiday}!",
+    en: "It's {holiday}!",
+    es: "¡Ha llegado {holiday}!"
+  },
+  "holiday.christmas.name": {
+    it: "Natale",
+    en: "Christmas",
+    es: "Navidad"
+  },
+  "holiday.christmas.subtitle": {
+    it: "Manca poco al Natale… Blu Mediterraneo ti aspetta tra luci e mare. 🎄",
+    en: "Christmas is coming… Blu Mediterraneo awaits you between lights and sea. 🎄",
+    es: "Se acerca la Navidad… Blu Mediterraneo te espera entre luces y mar. 🎄"
+  },
+  "holiday.newyear.name": {
+    it: "Capodanno",
+    en: "New Year",
+    es: "Año Nuevo"
+  },
+  "holiday.newyear.subtitle": {
+    it: "Brindiamo insieme al nuovo anno con fuochi d'artificio virtuali! 🎆",
+    en: "Let's toast the new year with virtual fireworks! 🎆",
+    es: "Brindemos por el Año Nuevo con fuegos artificiales virtuales. 🎆"
+  },
+  "holiday.easter.name": {
+    it: "Pasqua",
+    en: "Easter",
+    es: "Pascua"
+  },
+  "holiday.easter.subtitle": {
+    it: "Pasqua in arrivo: ovetti e caramelle che piovono dal cielo! 🐣",
+    en: "Easter is coming: eggs and sweets falling from the sky! 🐣",
+    es: "Se acerca la Pascua: huevos y dulces que caen del cielo. 🐣"
+  },
+
+  "aria.openLang": { it:"Apri selettore lingua", en:"Open language selector", es:"Abrir selector de idioma" },
     "footer.airBnb": { it:"Per maggiori dettagli dell appartamento potete consultare airBnb", en:"For more details about the apartment you can check Airbnb", es:"Para más detalles del apartamento consulta Airbnb" }
   };
 
@@ -414,4 +460,224 @@
       window.addEventListener('touchmove', e=>move(e.touches[0].pageX), {passive:true});
       window.addEventListener('touchend', end);
     })();
- 
+	
+	
+	/* =========================
+	   FESTE + BANNER STAGIONALE (usa I18N)
+	   ========================= */
+
+	// 1. Calcolo Pasqua (calendario gregoriano)
+	function getEasterDate(year) {
+	  const a = year % 19;
+	  const b = Math.floor(year / 100);
+	  const c = year % 100;
+	  const d = Math.floor(b / 4);
+	  const e = b % 4;
+	  const f = Math.floor((b + 8) / 25);
+	  const g = Math.floor((b - f + 1) / 3);
+	  const h = (19 * a + b - d - g + 15) % 30;
+	  const i = Math.floor(c / 4);
+	  const k = c % 4;
+	  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+	  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+	  const month = Math.floor((h + l - 7 * m + 114) / 31); // 3 = marzo, 4 = aprile
+	  const day = ((h + l - 7 * m + 114) % 31) + 1;
+	  return new Date(year, month - 1, day);
+	}
+
+	// 2. Configurazione feste (testi nel dizionario I18N)
+	const HOLIDAYS = [
+	  {
+	    id: "christmas",
+	    getDate: (year) => new Date(year, 11, 25), // 25 dicembre
+	    theme: "christmas"
+	  },
+	  {
+	    id: "newyear",
+	    getDate: (year) => new Date(year, 0, 1), // 1 gennaio
+	    theme: "newyear"
+	  },
+	  {
+	    id: "easter",
+	    getDate: (year) => getEasterDate(year),
+	    theme: "easter"
+	  }
+	];
+
+	function getNextHoliday() {
+	  const now = new Date();
+	  const year = now.getFullYear();
+	  const candidates = [];
+
+	  HOLIDAYS.forEach((h) => {
+	    const dThis = h.getDate(year);
+	    const dNext = h.getDate(year + 1);
+	    candidates.push({ ...h, date: dThis });
+	    candidates.push({ ...h, date: dNext });
+	  });
+
+	  const future = candidates.filter((h) => h.date.getTime() > now.getTime());
+	  future.sort((a, b) => a.date - b.date);
+	  return future[0] || null;
+	}
+
+	// 3. Effetti grafici (neve, caramelle, fuochi)
+	let holidayEffectInterval = null;
+
+	function createParticle(char, className, container) {
+	  const el = document.createElement("span");
+	  el.className = "holiday-particle " + className;
+	  el.textContent = char;
+
+	  el.style.left = Math.random() * 100 + "%";
+	  el.style.fontSize = 10 + Math.random() * 20 + "px";
+	  el.style.animationDuration = 4 + Math.random() * 4 + "s";
+
+	  if (className === "firework") {
+	    el.style.bottom = "-10%";
+	  } else {
+	    el.style.top = "-10%";
+	  }
+
+	  container.appendChild(el);
+	  el.addEventListener("animationend", () => el.remove());
+	}
+
+	function startHolidayEffects(theme) {
+	  const container = document.getElementById("holiday-effects");
+	  if (!container) return;
+
+	  if (holidayEffectInterval) {
+	    clearInterval(holidayEffectInterval);
+	    holidayEffectInterval = null;
+	  }
+
+	  if (theme === "christmas") {
+	    const flakes = ["❄", "❅", "❆"];
+	    holidayEffectInterval = setInterval(() => {
+	      const char = flakes[Math.floor(Math.random() * flakes.length)];
+	      createParticle(char, "snowflake", container);
+	    }, 350);
+	  } else if (theme === "easter") {
+	    const candies = ["🍬", "🍭", "🍫", "🥚"];
+	    holidayEffectInterval = setInterval(() => {
+	      const char = candies[Math.floor(Math.random() * candies.length)];
+	      createParticle(char, "candy", container);
+	    }, 350);
+	  } else if (theme === "newyear") {
+	    const sparks = ["🎆", "🎇", "✨"];
+	    holidayEffectInterval = setInterval(() => {
+	      const char = sparks[Math.floor(Math.random() * sparks.length)];
+	      createParticle(char, "firework", container);
+	    }, 500);
+	  }
+	}
+
+	// 4. Banner + countdown con I18N
+	document.addEventListener("DOMContentLoaded", function () {
+	  const banner = document.getElementById("holiday-banner");
+	  const titleEl = document.getElementById("holiday-title");
+	  const subtitleEl = document.getElementById("holiday-subtitle");
+	  const countdownEl = document.getElementById("holiday-countdown");
+	  const closeBtn = document.getElementById("holiday-close");
+	  const labelEl = banner
+	    ? banner.querySelector(".holiday-banner-countdown .label")
+	    : null;
+
+	  if (!banner || !titleEl || !subtitleEl || !countdownEl || !labelEl) return;
+
+	  const holiday = getNextHoliday();
+	  if (!holiday) {
+	    banner.style.display = "none";
+	    return;
+	  }
+
+	  let currentLang =
+	    (window.CUR_LANG || document.documentElement.lang || "it").toLowerCase();
+
+	  function applyBannerTexts() {
+	    const lang =
+	      (window.CUR_LANG || currentLang || "it").toLowerCase();
+
+	    const nameKey = `holiday.${holiday.id}.name`;
+	    const subtitleKey = `holiday.${holiday.id}.subtitle`;
+
+	    const holidayName = t(nameKey, lang);
+	    const subtitle = t(subtitleKey, lang);
+	    const titleTemplate = t("banner.title", lang);
+	    const label = t("banner.countdownLabel", lang);
+
+	    if (titleEl)
+	      titleEl.textContent = titleTemplate.replace("{holiday}", holidayName);
+	    if (subtitleEl) subtitleEl.textContent = subtitle;
+	    if (labelEl) labelEl.textContent = label;
+
+	    currentLang = lang;
+	  }
+
+	  // Applica testi iniziali nella lingua corrente
+	  applyBannerTexts();
+	  // Effetti (neve / caramelle / fuochi)
+	  startHolidayEffects(holiday.theme);
+
+	  // Dopo 5 secondi il banner si compatta
+	  setTimeout(() => {
+	    banner.classList.add("is-minimized");
+	  }, 5000);
+
+	  // Countdown
+	  let countdownInterval = null;
+
+	  function updateCountdown() {
+	    const now = Date.now();
+	    const target = holiday.date.getTime();
+	    const diff = target - now;
+
+	    const lang =
+	      (window.CUR_LANG || currentLang || "it").toLowerCase();
+
+	    if (diff <= 0) {
+	      const holidayName = t(`holiday.${holiday.id}.name`, lang);
+	      const arrivedTemplate = t("banner.arrived", lang);
+	      countdownEl.textContent = arrivedTemplate.replace("{holiday}", holidayName);
+	      if (countdownInterval) clearInterval(countdownInterval);
+	      return;
+	    }
+
+	    const seconds = Math.floor(diff / 1000);
+	    const days = Math.floor(seconds / (3600 * 24));
+	    const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+	    const minutes = Math.floor((seconds % 3600) / 60);
+	    const secs = seconds % 60;
+
+	    // g/h/m/s li lasciamo "universali"
+	    countdownEl.textContent =
+	      `${days}g ` +
+	      `${String(hours).padStart(2, "0")}h ` +
+	      `${String(minutes).padStart(2, "0")}m ` +
+	      `${String(secs).padStart(2, "0")}s`;
+	  }
+
+	  updateCountdown();
+	  countdownInterval = setInterval(updateCountdown, 1000);
+
+	  // Pulsante chiudi
+	  if (closeBtn) {
+	    closeBtn.addEventListener("click", () => {
+	      banner.style.display = "none";
+	      if (countdownInterval) clearInterval(countdownInterval);
+	      if (holidayEffectInterval) clearInterval(holidayEffectInterval);
+	    });
+	  }
+
+	  // Quando cambi lingua dal menu, aggiorna anche il banner
+	  document
+	    .querySelectorAll("#langMenu [data-lang]")
+	    .forEach((a) => {
+	      a.addEventListener("click", () => {
+	        const newLang = a.getAttribute("data-lang");
+	        if (newLang) currentLang = newLang.toLowerCase();
+	        applyBannerTexts();
+	      });
+	    });
+	});
